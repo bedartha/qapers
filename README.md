@@ -1,5 +1,5 @@
 # qapers
-A simple bash script to manage your PDF library
+A simple bash script to manage your library of scientific papers
 
 qapers is a simple bash script manages a library of PDF files by allowing
 the user to quickly find a file, open it in the default PDF viewer, and
