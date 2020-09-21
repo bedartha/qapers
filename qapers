@@ -1,0 +1,153 @@
+#! /bin/bash
+# -------------------------------------------------------------------------
+# qapers -  A simple bash script to manage your library of scientific papers
+# 
+#           This script manages a library of PDF files by allowing the user to
+#           quickly find a file, open it in the default PDF viewer, and
+#           maintain a separate directory of annotations on each PDF file.
+#
+# Created: Sun Sep 20, 2020  08:26pm
+# Last modified: Mon Sep 21, 2020  10:28pm
+# Copyright: Bedartha Goswami <bedartha@zohomail.eu>
+# -------------------------------------------------------------------------
+
+USAGE="
+qapers -   A simple bash script to manage your library of scientific papers
+
+SYNOPSIS
+    qapers [OPTION] [KEYWORD]
+
+DESCRIPTION
+    qapers is a simple bash script manages a library of PDF files by allowing
+    the user to quickly find a file, open it in the default PDF viewer, and
+    maintain a separate directory of annotations on each PDF file. You can use
+    it to:
+
+        * Find a PDF file in a directory where you dump all your PDFs
+        * Pipe the results from the 'find' option to open a PDF of your choice
+        * Open a YAML annotations file to store your notes on the PDF
+        * Tag your PDFs using the YAML annotations file
+        * Review your previously stored annotations
+        * Export the bibliographic info of each PDF in BibTex format
+        * Export parts or all of your notes on any PDF in any format you wish
+
+    To function properly, papers needs you to store all your PDF files in PDF_DIR
+    in a way that the file name contains the following information in any
+    order:
+
+        * year of publication YYYY
+        * list of authors (in 'et al.' form for author lists greater than 3 authors)
+        * publication name (using a consistent abbreviation convention)
+        * a short key-phrase that sums up the title or main message of the article
+
+    An example file name for the publication by Bevacqua et al. in the journal
+    _Science Advances_ form Sep 2019 in which the authors study compound
+    flooding in Europe in future global warming scenarios
+    (https://advances.sciencemag.org/content/5/9/eaaw5531) could be:
+
+    2019_Bevacqua_etal_SciAdv_CompoundFloodingStormSurgeEuropeClimateChange.pdf
+
+    It's a long file name, yes, but it gets the job done. Queries on the
+    author, journal name, year of publicaiton or the topics 'CompundFlooding',
+    'ClimateChange', 'Climate', 'Flooding', etc. would show this file.
+
+    A list of scientific journal abbreviations can be found here:
+    https://www.library.caltech.edu/journal-title-abbreviations
+
+    
+OPTIONS
+    find
+    open
+    note
+    review
+
+DEPENDENCY
+    yq          yq is a lightweight and portable command-line YAML processor
+                https://mikefarah.gitbook.io/yq/
+
+ENVIRONMENT VARIABLES
+    PDF_DIR     Directory containing all PDF files to manage with qapers
+    ANNOT_DIR   Directory that will contain all YAML annotation files
+    PDF_READER  Name (CLI exectuable) of PDF reader to be used by qapers
+
+AUTHOR
+    Bedartha Goswami
+    bedartha@zohomail.eu
+
+COPYRIGHT
+    Copyright (c) Bedartha Goswami 2020.
+    Please visit https://github.com/bedartha/papers.
+    This is free software; see the source code for copying conditions. There is
+    NO warranty. Use it at your own risk, or convenience, as the case may be.
+
+"
+# set environment variables / parameters
+PDF_DIR=$HOME/Nextcloud/mlcloud/work/library/papers/
+ANNOT_DIR=$HOME/Nextcloud/mlcloud/work/library/notes/on_papers/
+PDF_READER=evince
+
+# help text
+if [ $1 = "help" ] || [ $1 = "--help" ] || [ $1 = "-h" ]
+then
+    echo "$USAGE" | less
+    exit
+fi
+
+# find a paper for given keyword
+if [ $1 = "find" ]
+then
+    if [ -z "$2" ]
+    then
+        echo "Please specify keyword, such as"
+        echo -e "\tYear of publication\t->\tqapers find 2015"
+        echo -e "\tName of first author\t->\tqapers find Newman"
+        echo -e "\tAbbrev. journal name\t->\tqapers find GeophysResLett"
+        echo -e "\tTopic of the paper\t->\tqapers find MJO"
+    else
+        for PAPER in $(find $PDF_DIR -iname *$2*); do
+            echo ${PAPER/$PDF_DIR/}
+        done
+    fi
+fi
+
+# open specified PDF
+if [ $1 = "open" ]
+then
+    $PDF_READER $PDF_DIR$2 &
+    disown
+fi
+
+# open YAML file for annotations with given filename
+if [ $1 = "note" ]
+then
+    if [ -z "$2" ]
+    then
+        echo -e "\033[1mSpecify file name or use 'review' to check the annotations in:\033[0m"
+        ls -C $ANNOT_DIR
+    else
+        ANNOT_FILE=$ANNOT_DIR$2
+        ANNOT_FILE=${ANNOT_FILE/.yml/}.yml
+        if [ ! -f "$ANNOT_FILE" ] # check that file does not exist
+        then
+            cp $ANNOT_DIR.template.yml $ANNOT_FILE
+        fi
+        browse $ANNOT_FILE
+    fi
+fi
+
+# display specified YAML file contents to show annotations
+if [ $1 = "review" ]
+then
+    if [ -z "$2" ]
+    then
+        echo -e "\033[1mSpecify file name from the list below or use 'note' to annotate a new file:\033[0m"
+        ls -C $ANNOT_DIR
+    else
+        ANNOT_FILE=$ANNOT_DIR$2
+        ANNOT_FILE=${ANNOT_FILE/.yml/}.yml
+        yq -CP r $ANNOT_FILE
+    fi
+fi
+
+
+
