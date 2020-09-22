@@ -7,7 +7,7 @@
 #           maintain a separate directory of annotations on each PDF file.
 #
 # Created: Sun Sep 20, 2020  08:26pm
-# Last modified: Tue Sep 22, 2020  11:57am
+# Last modified: Tue Sep 22, 2020  11:01pm
 # Copyright: Bedartha Goswami <bedartha@zohomail.eu>
 # -------------------------------------------------------------------------
 
@@ -60,6 +60,8 @@ OPTIONS
     open
     note
     review
+    tags
+    json
 
 DEPENDENCY
     yq          yq is a lightweight and portable command-line YAML processor
@@ -183,6 +185,25 @@ then
                 echo ${OUT/.yml/}
             fi
         done
+    fi
+fi
+
+# update json file
+if [ $1 = "json" ]
+then
+    if [ -z "$2" ]
+    then
+        echo "Please specify keyword: update, ..."
+        exit
+    else
+        OUT=""
+        for F in $(ls $ANNOT_DIR/*.yml)
+        do
+            OUT=$OUT$(yq r $F -j),
+        done
+        OUT=$(echo $OUT | sed -e "s/,$//")
+        OUT=[$OUT]
+        echo $OUT > $ANNOT_DIR/index.json
     fi
 fi
 
