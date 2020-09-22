@@ -7,7 +7,7 @@
 #           maintain a separate directory of annotations on each PDF file.
 #
 # Created: Sun Sep 20, 2020  08:26pm
-# Last modified: Tue Sep 22, 2020  11:07am
+# Last modified: Tue Sep 22, 2020  11:57am
 # Copyright: Bedartha Goswami <bedartha@zohomail.eu>
 # -------------------------------------------------------------------------
 
@@ -156,5 +156,34 @@ then
     fi
 fi
 
+
+# manage tags
+if [ $1 = "tags" ]
+then
+    if [ -z "$2" ]
+    then
+        echo -e "\033[1mSpecify a tag from the list below \033[0m"
+        echo "(number indicates the number of files with the tag)"
+        ALL_TAGS=""
+        for PAPER in $ANNOT_DIR*
+        do
+            TAGS=$(yq -CP r $PAPER 'Tags')
+            ALL_TAGS="${ALL_TAGS}$TAGS, "
+        done
+        ALL_TAGS=$(echo $ALL_TAGS | sed -e 's/, *$//' | sed -e 's/, /\\n/g')
+        echo -e $ALL_TAGS | sort | uniq -c
+    else
+        echo -e "\033[1mThe following papers are tagged as '$2':\033[0m"
+        for PAPER in $ANNOT_DIR*
+        do
+            TAGS=$(yq -CP r $PAPER 'Tags')
+            if [[ "$TAGS" = *"$2"* ]]
+            then
+                OUT=${PAPER/$ANNOT_DIR/}
+                echo ${OUT/.yml/}
+            fi
+        done
+    fi
+fi
 
 
