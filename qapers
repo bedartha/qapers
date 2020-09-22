@@ -7,7 +7,7 @@
 #           maintain a separate directory of annotations on each PDF file.
 #
 # Created: Sun Sep 20, 2020  08:26pm
-# Last modified: Mon Sep 21, 2020  10:28pm
+# Last modified: Tue Sep 22, 2020  11:07am
 # Copyright: Bedartha Goswami <bedartha@zohomail.eu>
 # -------------------------------------------------------------------------
 
@@ -85,6 +85,13 @@ COPYRIGHT
 PDF_DIR=$HOME/Nextcloud/mlcloud/work/library/papers/
 ANNOT_DIR=$HOME/Nextcloud/mlcloud/work/library/notes/on_papers/
 PDF_READER=evince
+
+# exit if no input is given
+if [ -z "$1" ]
+then
+    echo "Please provide an option! See 'qapers help' for more details"
+    exit
+fi
 
 # help text
 if [ $1 = "help" ] || [ $1 = "--help" ] || [ $1 = "-h" ]
