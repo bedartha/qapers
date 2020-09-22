@@ -7,7 +7,7 @@
 #           maintain a separate directory of annotations on each PDF file.
 #
 # Created: Sun Sep 20, 2020  08:26pm
-# Last modified: Wed Sep 23, 2020  12:56am
+# Last modified: Wed Sep 23, 2020  01:07am
 # Copyright: Bedartha Goswami <bedartha@zohomail.eu>
 # -------------------------------------------------------------------------
 
@@ -106,7 +106,7 @@ then
 fi
 
 # find a paper for given keyword
-if [ $1 = "find" ]
+if [ "$1" = "find" ]
 then
     if [ -z "$2" ]
     then
@@ -116,21 +116,21 @@ then
         echo -e "\tAbbrev. journal name\t->\tqapers find GeophysResLett"
         echo -e "\tTopic of the paper\t->\tqapers find MJO"
     else
-        for PAPER in $(find $PDF_DIR -iname *$2*); do
+        for PAPER in $(find $PDF_DIR -iname *"$2"*); do
             echo ${PAPER/$PDF_DIR\//}
         done
     fi
 fi
 
 # open specified PDF
-if [ $1 = "open" ]
+if [ "$1" = "open" ]
 then
     $PDF_READER $PDF_DIR/$2 &
     disown
 fi
 
 # open YAML file for annotations with given filename
-if [ $1 = "note" ]
+if [ "$1" = "note" ]
 then
     if [ -z "$2" ]
     then
@@ -147,7 +147,7 @@ then
 fi
 
 # display specified YAML file contents to show annotations
-if [ $1 = "review" ]
+if [ "$1" = "review" ]
 then
     if [ -z "$2" ]
     then
@@ -161,15 +161,16 @@ fi
 
 
 # manage tags
-if [ $1 = "tags" ]
+if [ "$1" = "tags" ]
 then
     if [ -z "$2" ]
     then
         echo -e "\033[1mSpecify a tag from the list below \033[0m"
         jq -r '.[] | .Tags' $INDEX_JSON | tr '\n' ',' | tr ',' '\n' | sed 's/^ //g' | sort | uniq -c
     else
+        shift
         JQ_CMD="jq -r '.[] |"
-        for TAG in $2
+        for TAG in "$@"
         do
             JQ_CMD=$JQ_CMD" select( .Tags | contains(\"$TAG\") ) |"
         done
@@ -179,7 +180,7 @@ then
 fi
 
 # update json file
-if [ $1 = "json" ]
+if [ "$1" = "json" ]
 then
     if [ -z "$2" ]
     then
