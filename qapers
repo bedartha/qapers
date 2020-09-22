@@ -7,7 +7,7 @@
 #           maintain a separate directory of annotations on each PDF file.
 #
 # Created: Sun Sep 20, 2020  08:26pm
-# Last modified: Tue Sep 22, 2020  11:01pm
+# Last modified: Wed Sep 23, 2020  12:56am
 # Copyright: Bedartha Goswami <bedartha@zohomail.eu>
 # -------------------------------------------------------------------------
 
@@ -66,6 +66,8 @@ OPTIONS
 DEPENDENCY
     yq          yq is a lightweight and portable command-line YAML processor
                 https://mikefarah.gitbook.io/yq/
+    jq          Command-line JSON processor
+                Installation on Debian / Ubuntu: sudo apt install jq
 
 ENVIRONMENT VARIABLES
     PDF_DIR     Directory containing all PDF files to manage with qapers
@@ -84,9 +86,10 @@ COPYRIGHT
 
 "
 # set environment variables / parameters
-PDF_DIR=$HOME/Nextcloud/mlcloud/work/library/papers/
-ANNOT_DIR=$HOME/Nextcloud/mlcloud/work/library/notes/on_papers/
+PDF_DIR=$HOME/Nextcloud/mlcloud/work/library/papers
+ANNOT_DIR=$HOME/Nextcloud/mlcloud/work/library/notes/on_papers
 PDF_READER=evince
+INDEX_JSON=$ANNOT_DIR/index.json
 
 # exit if no input is given
 if [ -z "$1" ]
@@ -114,7 +117,7 @@ then
         echo -e "\tTopic of the paper\t->\tqapers find MJO"
     else
         for PAPER in $(find $PDF_DIR -iname *$2*); do
-            echo ${PAPER/$PDF_DIR/}
+            echo ${PAPER/$PDF_DIR\//}
         done
     fi
 fi
@@ -122,7 +125,7 @@ fi
 # open specified PDF
 if [ $1 = "open" ]
 then
-    $PDF_READER $PDF_DIR$2 &
+    $PDF_READER $PDF_DIR/$2 &
     disown
 fi
 
@@ -132,10 +135,9 @@ then
     if [ -z "$2" ]
     then
         echo -e "\033[1mSpecify file name or use 'review' to check the annotations in:\033[0m"
-        ls -C $ANNOT_DIR
+        jq -r '.[] | .Filename ' $INDEX_JSON
     else
-        ANNOT_FILE=$ANNOT_DIR$2
-        ANNOT_FILE=${ANNOT_FILE/.yml/}.yml
+        ANNOT_FILE=$ANNOT_DIR/$2.yml
         if [ ! -f "$ANNOT_FILE" ] # check that file does not exist
         then
             cp $ANNOT_DIR.template.yml $ANNOT_FILE
@@ -150,10 +152,9 @@ then
     if [ -z "$2" ]
     then
         echo -e "\033[1mSpecify file name from the list below or use 'note' to annotate a new file:\033[0m"
-        ls -C $ANNOT_DIR
+        jq -r '.[] | .Filename ' $INDEX_JSON
     else
-        ANNOT_FILE=$ANNOT_DIR$2
-        ANNOT_FILE=${ANNOT_FILE/.yml/}.yml
+        ANNOT_FILE=$ANNOT_DIR/$2.yml
         yq -CP r $ANNOT_FILE
     fi
 fi
@@ -165,26 +166,15 @@ then
     if [ -z "$2" ]
     then
         echo -e "\033[1mSpecify a tag from the list below \033[0m"
-        echo "(number indicates the number of files with the tag)"
-        ALL_TAGS=""
-        for PAPER in $ANNOT_DIR*
-        do
-            TAGS=$(yq -CP r $PAPER 'Tags')
-            ALL_TAGS="${ALL_TAGS}$TAGS, "
-        done
-        ALL_TAGS=$(echo $ALL_TAGS | sed -e 's/, *$//' | sed -e 's/, /\\n/g')
-        echo -e $ALL_TAGS | sort | uniq -c
+        jq -r '.[] | .Tags' $INDEX_JSON | tr '\n' ',' | tr ',' '\n' | sed 's/^ //g' | sort | uniq -c
     else
-        echo -e "\033[1mThe following papers are tagged as '$2':\033[0m"
-        for PAPER in $ANNOT_DIR*
+        JQ_CMD="jq -r '.[] |"
+        for TAG in $2
         do
-            TAGS=$(yq -CP r $PAPER 'Tags')
-            if [[ "$TAGS" = *"$2"* ]]
-            then
-                OUT=${PAPER/$ANNOT_DIR/}
-                echo ${OUT/.yml/}
-            fi
+            JQ_CMD=$JQ_CMD" select( .Tags | contains(\"$TAG\") ) |"
         done
+        JQ_CMD=$JQ_CMD" .Filename ' $ANNOT_DIR/index.json"
+        eval $JQ_CMD
     fi
 fi
 
