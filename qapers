@@ -7,7 +7,7 @@
 #           maintain a separate directory of annotations on each PDF file.
 #
 # Created: Sun Sep 20, 2020  08:26pm
-# Last modified: Wed Sep 23, 2020  01:07am
+# Last modified: Wed Sep 23, 2020  04:02pm
 # Copyright: Bedartha Goswami <bedartha@zohomail.eu>
 # -------------------------------------------------------------------------
 
@@ -86,10 +86,11 @@ COPYRIGHT
 
 "
 # set environment variables / parameters
-PDF_DIR=$HOME/Nextcloud/mlcloud/work/library/papers
+PDF_DIR=$HOME/Nextcloud/mlcloud/work/library/papers/test_dir
 ANNOT_DIR=$HOME/Nextcloud/mlcloud/work/library/notes/on_papers
 PDF_READER=evince
-INDEX_JSON=$ANNOT_DIR/index.json
+INDEX_JSON=$PDF_DIR/index.qapers.json
+INDEX_YAML=$PDF_DIR/index.qapers.yaml
 
 # exit if no input is given
 if [ -z "$1" ]
@@ -116,9 +117,15 @@ then
         echo -e "\tAbbrev. journal name\t->\tqapers find GeophysResLett"
         echo -e "\tTopic of the paper\t->\tqapers find MJO"
     else
-        for PAPER in $(find $PDF_DIR -iname *"$2"*); do
-            echo ${PAPER/$PDF_DIR\//}
+        shift
+        for KEY in "$@"
+        do
+            jq -r '.[] | .Filename ' $INDEX_JSON
+            echo $KEY
         done
+        #for PAPER in $(find $PDF_DIR -iname *"$2"*); do
+        #    echo ${PAPER/$PDF_DIR\//}
+        #done
     fi
 fi
 
@@ -180,21 +187,62 @@ then
 fi
 
 # update json file
-if [ "$1" = "json" ]
+if [ "$1" = "index" ]
 then
     if [ -z "$2" ]
     then
-        echo "Please specify keyword: update, ..."
+        echo "Please specify keyword: build, update, ..."
         exit
     else
-        OUT=""
-        for F in $(ls $ANNOT_DIR/*.yml)
-        do
-            OUT=$OUT$(yq r $F -j),
-        done
-        OUT=$(echo $OUT | sed -e "s/,$//")
-        OUT=[$OUT]
-        echo $OUT > $ANNOT_DIR/index.json
+        if [ "$2" = "build" ]
+        then
+            echo "Building YAML index ..."
+            echo > $INDEX_YAML
+            echo -en "Index:\n" >> $INDEX_YAML 
+            for PDF in $PDF_DIR/*.pdf
+            do
+                # extract the file name fro the much longer path-to-file
+                FNAME=${PDF/$PDF_DIR\//}
+                echo $FNAME
+                # extract relevant fields - e.g. year, authors, journal
+                SHORTEN=${FNAME/\.pdf/}
+                YEAR=${SHORTEN/[^0-9.]*/}
+                SHORTEN=${SHORTEN/$YEAR\_/}
+                TOPIC=${SHORTEN##*\_}
+                SHORTEN=${SHORTEN/\_$TOPIC/}
+                JOURNAL=${SHORTEN##*\_}
+                SHORTEN=${SHORTEN/\_$JOURNAL/}
+                AUTHORS=$(echo $SHORTEN | sed -e 's/_/,\ /g')
+                # format and write YAML strings to index file
+                echo -en "    ""- Paper:\n" >> $INDEX_YAML 
+                echo -en "        ""PDF_file: $FNAME\n" >> $INDEX_YAML 
+                echo -en "        ""Title: $TOPIC\n" >> $INDEX_YAML
+                echo -en "        ""Authors: $AUTHORS\n" >> $INDEX_YAML
+                echo -en "        ""Journal: $JOURNAL\n" >> $INDEX_YAML
+                echo -en "        ""Year: $YEAR\n" >> $INDEX_YAML
+                echo -en "        ""Issue:\n" >> $INDEX_YAML
+                echo -en "        ""Pages:\n" >> $INDEX_YAML
+                echo -en "        ""Tags: new, unread\n" >> $INDEX_YAML
+                echo -en "        ""Notes_file: $FNAME.yml\n" >> $INDEX_YAML
+            done
+            echo Done.
+            echo Creating JSON index from YAML ...
+            yq r $INDEX_YAML -j > $INDEX_JSON
+            echo Done.
+            exit
+        fi
+        if [ "$2" = "update" ]
+        then
+            echo "Updating index ..."
+            OUT=""
+            for F in $(ls $ANNOT_DIR/*.yml)
+            do
+                OUT=$OUT$(yq r $F -j),
+            done
+            OUT=$(echo $OUT | sed -e "s/,$//")
+            OUT=[$OUT]
+            echo $OUT > $ANNOT_DIR/index.json
+        fi
     fi
 fi
 
