@@ -7,7 +7,7 @@
 #           maintain a separate directory of annotations on each PDF file.
 #
 # Created: Sun Sep 20, 2020  08:26pm
-# Last modified: Wed Sep 23, 2020  11:00pm
+# Last modified: Wed Sep 23, 2020  11:12pm
 # Copyright: Bedartha Goswami <bedartha@gmail.com>
 # -----------------------------------------------------------------------------
 
@@ -321,19 +321,34 @@ then
     if [ -z "$2" ]
     then
         echo "Please specify keyword: 'build' or 'update'."
+        echo "See 'qapers help' for more info. "
         exit
     else
         if [ "$2" = "build" ]
         then
-            PDF_LIST=$(ls $PDF_DIR/*.pdf)
-            echo "Building YAML index for $(echo $PDF_LIST | wc -w) files..."
-            echo > $INDEX_YAML
-            echo -en "Index:\n" >> $INDEX_YAML 
-            add_to_yaml "$PDF_LIST"
-            echo Creating JSON index from YAML ...
-            yq r $INDEX_YAML -j > $INDEX_JSON
-            echo Done.
-            exit
+            echo "This will erase all existing annotations and bibliographic info!"
+            echo "Back up the current index.qapers.yaml before proceeding!"
+            echo -n "Are you sure you want to proceed? (y/n)  "
+            read PROCEED
+            if [ "$PROCEED" = "y" ]
+            then
+                PDF_LIST=$(ls $PDF_DIR/*.pdf)
+                echo "Building YAML index for $(echo $PDF_LIST | wc -w) files..."
+                echo > $INDEX_YAML
+                echo -en "Index:\n" >> $INDEX_YAML 
+                add_to_yaml "$PDF_LIST"
+                echo Creating JSON index from YAML ...
+                yq r $INDEX_YAML -j > $INDEX_JSON
+                echo Done.
+                exit
+            elif [ "$PROCEED" = "n" ]
+            then
+                echo "Good choice! Better do that backup now ;)"
+                exit
+            else
+                echo "Invalid option. Exiting ..."
+                exit
+            fi
         fi
         if [ "$2" = "update" ]
         then
