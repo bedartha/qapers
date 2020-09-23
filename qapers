@@ -7,7 +7,7 @@
 #           maintain a separate directory of annotations on each PDF file.
 #
 # Created: Sun Sep 20, 2020  08:26pm
-# Last modified: Wed Sep 23, 2020  04:02pm
+# Last modified: Wed Sep 23, 2020  09:37pm
 # Copyright: Bedartha Goswami <bedartha@zohomail.eu>
 # -------------------------------------------------------------------------
 
@@ -67,7 +67,11 @@ DEPENDENCY
     yq          yq is a lightweight and portable command-line YAML processor
                 https://mikefarah.gitbook.io/yq/
     jq          Command-line JSON processor
-                Installation on Debian / Ubuntu: sudo apt install jq
+                Installation on Ubuntu: sudo apt install jq
+
+    [Optional]
+    gvim        Vi IMproved - enhanced vi editor
+                Installation on Ubuntu: sudo apt install vim-gnome
 
 ENVIRONMENT VARIABLES
     PDF_DIR     Directory containing all PDF files to manage with qapers
@@ -80,18 +84,55 @@ AUTHOR
 
 COPYRIGHT
     Copyright (c) Bedartha Goswami 2020.
-    Please visit https://github.com/bedartha/papers.
+    Please visit https://github.com/bedartha/qapers.
     This is free software; see the source code for copying conditions. There is
     NO warranty. Use it at your own risk, or convenience, as the case may be.
 
 "
 # set environment variables / parameters
-PDF_DIR=$HOME/Nextcloud/mlcloud/work/library/papers/test_dir
+PDF_DIR=$HOME/Nextcloud/mlcloud/work/library/papers
 ANNOT_DIR=$HOME/Nextcloud/mlcloud/work/library/notes/on_papers
 PDF_READER=evince
+YML_EDITOR=gvim
 INDEX_JSON=$PDF_DIR/index.qapers.json
 INDEX_YAML=$PDF_DIR/index.qapers.yaml
 
+# add new PDF files to YAML index file
+add_to_yaml () {
+    LIST_OF_PDFS=$1
+    for PDF in $LIST_OF_PDFS
+    do
+        # extract the file name fro the much longer path-to-file
+        FNAME=${PDF/$PDF_DIR\//}
+        echo $FNAME
+        # extract relevant fields - e.g. year, authors, journal
+        SHORTEN=${FNAME/\.pdf/}
+        YEAR=${SHORTEN/[^0-9.]*/}
+        SHORTEN=${SHORTEN/$YEAR\_/}
+        TOPIC=${SHORTEN##*\_}
+        SHORTEN=${SHORTEN/\_$TOPIC/}
+        JOURNAL=${SHORTEN##*\_}
+        SHORTEN=${SHORTEN/\_$JOURNAL/}
+        AUTHORS=$(echo $SHORTEN | sed -e 's/_/,\ /g')
+        # format and write YAML strings to index file
+        echo -en "    ""- Paper:\n" >> $INDEX_YAML 
+        echo -en "        ""PDF_file: $FNAME\n" >> $INDEX_YAML 
+        echo -en "        ""Title: $TOPIC\n" >> $INDEX_YAML
+        echo -en "        ""Authors: $AUTHORS\n" >> $INDEX_YAML
+        echo -en "        ""Journal: $JOURNAL\n" >> $INDEX_YAML
+        echo -en "        ""Year: $YEAR\n" >> $INDEX_YAML
+        echo -en "        ""Issue:\n" >> $INDEX_YAML
+        echo -en "        ""Pages:\n" >> $INDEX_YAML
+        echo -en "        ""Tags: new, unread\n" >> $INDEX_YAML
+        echo -en "        ""Notes:\n" >> $INDEX_YAML
+        echo -en "            ""Key_Question:\n" >> $INDEX_YAML
+        echo -en "            ""Key_Results:\n" >> $INDEX_YAML
+        echo -en "            ""Key_Impact:\n" >> $INDEX_YAML
+        echo -en "            ""Key_Points:\n" >> $INDEX_YAML
+        echo -en "                ""- \n" >> $INDEX_YAML
+    done
+    echo Done - for $(echo $LIST_OF_PDFS | wc -w) files.
+}
 # exit if no input is given
 if [ -z "$1" ]
 then
@@ -118,14 +159,13 @@ then
         echo -e "\tTopic of the paper\t->\tqapers find MJO"
     else
         shift
+        JQ_CMD="jq -r '.Index[] .Paper |"
         for KEY in "$@"
         do
-            jq -r '.[] | .Filename ' $INDEX_JSON
-            echo $KEY
+            JQ_CMD=$JQ_CMD" select( .PDF_file | contains(\"$KEY\") ) |"
         done
-        #for PAPER in $(find $PDF_DIR -iname *"$2"*); do
-        #    echo ${PAPER/$PDF_DIR\//}
-        #done
+        JQ_CMD=$JQ_CMD" .PDF_file ' $INDEX_JSON"
+        eval $JQ_CMD
     fi
 fi
 
@@ -142,14 +182,12 @@ then
     if [ -z "$2" ]
     then
         echo -e "\033[1mSpecify file name or use 'review' to check the annotations in:\033[0m"
-        jq -r '.[] | .Filename ' $INDEX_JSON
+        echo "Please specify a unique filename. See 'qapers find'."
     else
-        ANNOT_FILE=$ANNOT_DIR/$2.yml
-        if [ ! -f "$ANNOT_FILE" ] # check that file does not exist
-        then
-            cp $ANNOT_DIR.template.yml $ANNOT_FILE
-        fi
-        browse $ANNOT_FILE
+        LINE_NO=$(grep -n $2 $INDEX_YAML)
+        LINE_NO=${LINE_NO%%:*}
+        eval $YML_EDITOR +$LINE_NO $INDEX_YAML &
+        disown
     fi
 fi
 
@@ -158,11 +196,12 @@ if [ "$1" = "review" ]
 then
     if [ -z "$2" ]
     then
-        echo -e "\033[1mSpecify file name from the list below or use 'note' to annotate a new file:\033[0m"
-        jq -r '.[] | .Filename ' $INDEX_JSON
+        echo "Please specify a unique filename. See 'qapers find'."
     else
-        ANNOT_FILE=$ANNOT_DIR/$2.yml
-        yq -CP r $ANNOT_FILE
+        JQ_CMD="jq -r '.Index[] .Paper |"
+        JQ_CMD=$JQ_CMD" select( .PDF_file | contains(\"$2\") )"
+        JQ_CMD=$JQ_CMD" ' $INDEX_JSON"
+        eval $JQ_CMD | yq r -CP -
     fi
 fi
 
@@ -186,7 +225,7 @@ then
     fi
 fi
 
-# update json file
+# indexing
 if [ "$1" = "index" ]
 then
     if [ -z "$2" ]
@@ -196,36 +235,11 @@ then
     else
         if [ "$2" = "build" ]
         then
-            echo "Building YAML index ..."
+            PDF_LIST=$(ls $PDF_DIR/*.pdf)
+            echo "Building YAML index for $(echo $PDF_LIST | wc -w) files..."
             echo > $INDEX_YAML
             echo -en "Index:\n" >> $INDEX_YAML 
-            for PDF in $PDF_DIR/*.pdf
-            do
-                # extract the file name fro the much longer path-to-file
-                FNAME=${PDF/$PDF_DIR\//}
-                echo $FNAME
-                # extract relevant fields - e.g. year, authors, journal
-                SHORTEN=${FNAME/\.pdf/}
-                YEAR=${SHORTEN/[^0-9.]*/}
-                SHORTEN=${SHORTEN/$YEAR\_/}
-                TOPIC=${SHORTEN##*\_}
-                SHORTEN=${SHORTEN/\_$TOPIC/}
-                JOURNAL=${SHORTEN##*\_}
-                SHORTEN=${SHORTEN/\_$JOURNAL/}
-                AUTHORS=$(echo $SHORTEN | sed -e 's/_/,\ /g')
-                # format and write YAML strings to index file
-                echo -en "    ""- Paper:\n" >> $INDEX_YAML 
-                echo -en "        ""PDF_file: $FNAME\n" >> $INDEX_YAML 
-                echo -en "        ""Title: $TOPIC\n" >> $INDEX_YAML
-                echo -en "        ""Authors: $AUTHORS\n" >> $INDEX_YAML
-                echo -en "        ""Journal: $JOURNAL\n" >> $INDEX_YAML
-                echo -en "        ""Year: $YEAR\n" >> $INDEX_YAML
-                echo -en "        ""Issue:\n" >> $INDEX_YAML
-                echo -en "        ""Pages:\n" >> $INDEX_YAML
-                echo -en "        ""Tags: new, unread\n" >> $INDEX_YAML
-                echo -en "        ""Notes_file: $FNAME.yml\n" >> $INDEX_YAML
-            done
-            echo Done.
+            add_to_yaml "$PDF_LIST"
             echo Creating JSON index from YAML ...
             yq r $INDEX_YAML -j > $INDEX_JSON
             echo Done.
@@ -233,17 +247,19 @@ then
         fi
         if [ "$2" = "update" ]
         then
-            echo "Updating index ..."
-            OUT=""
-            for F in $(ls $ANNOT_DIR/*.yml)
-            do
-                OUT=$OUT$(yq r $F -j),
-            done
-            OUT=$(echo $OUT | sed -e "s/,$//")
-            OUT=[$OUT]
-            echo $OUT > $ANNOT_DIR/index.json
+            echo Looking for new files in PDF directory ...
+            LS_OUT1=$(ls -lh --time-style=+%Y%m%d%H%M $INDEX_JSON)
+            LS_OUT2=${LS_OUT1%% $INDEX_JSON}
+            LS_OUT3=${LS_OUT2% *}
+            LAST_MOD=${LS_OUT2/$LS_OUT3}
+            echo $LAST_MOD
+            NEW_PDFS=$(find $PDF_DIR/*pdf -newerct "$LASTMOD")
+            echo Found "$(echo $NEW_PDFS | wc -w)" new files
+            add_to_yaml "$NEW_PDFS" 
+            echo Updating JSON index from YAML ...
+            yq r $INDEX_YAML -j > $INDEX_JSON
+            echo Done.
         fi
     fi
 fi
-
 
