@@ -7,7 +7,7 @@
 #           maintain a separate directory of annotations on each PDF file.
 #
 # Created: Sun Sep 20, 2020  08:26pm
-# Last modified: Wed Sep 23, 2020  09:37pm
+# Last modified: Wed Sep 23, 2020  09:56pm
 # Copyright: Bedartha Goswami <bedartha@zohomail.eu>
 # -------------------------------------------------------------------------
 
@@ -75,8 +75,10 @@ DEPENDENCY
 
 ENVIRONMENT VARIABLES
     PDF_DIR     Directory containing all PDF files to manage with qapers
-    ANNOT_DIR   Directory that will contain all YAML annotation files
     PDF_READER  Name (CLI exectuable) of PDF reader to be used by qapers
+    YML_EDITOR  Name (CLI executable) of text editor to use for annotations
+    INDEX_YAML  Path-to-file where paper info and notes as YAML will be stored
+    INDEX_JSON  Path-to-file where INDEX_YAML file contents are stored as JSON
 
 AUTHOR
     Bedartha Goswami
@@ -91,7 +93,6 @@ COPYRIGHT
 "
 # set environment variables / parameters
 PDF_DIR=$HOME/Nextcloud/mlcloud/work/library/papers
-ANNOT_DIR=$HOME/Nextcloud/mlcloud/work/library/notes/on_papers
 PDF_READER=evince
 YML_EDITOR=gvim
 INDEX_JSON=$PDF_DIR/index.qapers.json
@@ -133,11 +134,26 @@ add_to_yaml () {
     done
     echo Done - for $(echo $LIST_OF_PDFS | wc -w) files.
 }
+
 # exit if no input is given
 if [ -z "$1" ]
 then
     echo "Please provide an option! See 'qapers help' for more details"
     exit
+fi
+
+# exit with error message if inputs are incorrect
+if [ $1 != "help" ] && [ $1 != "find" ] && [ $1 != "open" ]
+then
+    if [ $1 != "note" ] && [ $1 != "review" ] && [ $1 != "tags" ]
+    then
+        if [ $1 != "index" ]
+        then
+            echo "Please specify correct input."
+            echo "See 'qapers help' for more info."
+            exit
+        fi
+    fi
 fi
 
 # help text
