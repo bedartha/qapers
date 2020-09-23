@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /usr/bin/env bash
 # -------------------------------------------------------------------------
 # qapers -  A simple bash script to manage your library of scientific papers
 # 
@@ -7,8 +7,8 @@
 #           maintain a separate directory of annotations on each PDF file.
 #
 # Created: Sun Sep 20, 2020  08:26pm
-# Last modified: Wed Sep 23, 2020  10:04pm
-# Copyright: Bedartha Goswami <bedartha@zohomail.eu>
+# Last modified: Wed Sep 23, 2020  10:13pm
+# Copyright: Bedartha Goswami <bedartha@gmail.com>
 # -------------------------------------------------------------------------
 
 USAGE="
@@ -98,7 +98,7 @@ YML_EDITOR=gvim
 INDEX_JSON=$PDF_DIR/index.qapers.json
 INDEX_YAML=$PDF_DIR/index.qapers.yaml
 
-# add new PDF files to YAML index file
+# helper function to add new PDF files to YAML index file
 add_to_yaml () {
     LIST_OF_PDFS=$1
     for PDF in $LIST_OF_PDFS
@@ -236,12 +236,12 @@ then
         eval $JQ_CMD
     else
         shift
-        JQ_CMD="jq -r '.[] |"
+        JQ_CMD="jq -r '.Index[] .Paper |"
         for TAG in "$@"
         do
             JQ_CMD=$JQ_CMD" select( .Tags | contains(\"$TAG\") ) |"
         done
-        JQ_CMD=$JQ_CMD" .Filename ' $ANNOT_DIR/index.json"
+        JQ_CMD=$JQ_CMD" .PDF_file ' $INDEX_JSON"
         eval $JQ_CMD
     fi
 fi
