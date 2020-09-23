@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-# -------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # qapers -  A simple bash script to manage your library of scientific papers
 # 
 #           This script manages a library of PDF files by allowing the user to
@@ -7,9 +7,9 @@
 #           maintain a separate directory of annotations on each PDF file.
 #
 # Created: Sun Sep 20, 2020  08:26pm
-# Last modified: Wed Sep 23, 2020  10:49pm
+# Last modified: Wed Sep 23, 2020  11:00pm
 # Copyright: Bedartha Goswami <bedartha@gmail.com>
-# -------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 USAGE="
 qapers -   A simple bash script to manage your library of scientific papers
@@ -126,6 +126,9 @@ COPYRIGHT
     NO warranty. Use it at your own risk, or convenience, as the case may be.
 
 "
+# -----------------------------------------------------------------------------
+# Preamble
+# -----------------------------------------------------------------------------
 # set environment variables / parameters
 PDF_DIR=$HOME/Nextcloud/mlcloud/work/library/papers
 PDF_READER=evince
@@ -135,12 +138,17 @@ INDEX_YAML=$PDF_DIR/index.qapers.yaml
 
 # helper function to add new PDF files to YAML index file
 add_to_yaml () {
+
+    # get input list of PDF filenames, which is in path-to-file form
     LIST_OF_PDFS=$1
+
+    # loop through list of PDFs file names and extract relevant paper info
     for PDF in $LIST_OF_PDFS
     do
-        # extract the file name fro the much longer path-to-file
+        # extract the file name from the much-longer path-to-file
         FNAME=${PDF/$PDF_DIR\//}
         echo $FNAME
+
         # extract relevant fields - e.g. year, authors, journal
         SHORTEN=${FNAME/\.pdf/}
         YEAR=${SHORTEN/[^0-9.]*/}
@@ -150,6 +158,7 @@ add_to_yaml () {
         JOURNAL=${SHORTEN##*\_}
         SHORTEN=${SHORTEN/\_$JOURNAL/}
         AUTHORS=$(echo $SHORTEN | sed -e 's/_/,\ /g')
+
         # format and write YAML strings to index file
         echo -en "    ""- Paper:\n" >> $INDEX_YAML 
         echo -en "        ""PDF_file: $FNAME\n" >> $INDEX_YAML 
@@ -166,10 +175,17 @@ add_to_yaml () {
         echo -en "            ""Key_Impact:\n" >> $INDEX_YAML
         echo -en "            ""Key_Points:\n" >> $INDEX_YAML
         echo -en "                ""- \n" >> $INDEX_YAML
+
     done
+
     echo Done - for $(echo $LIST_OF_PDFS | wc -w) files.
+
 }
 
+
+# -----------------------------------------------------------------------------
+# (Very basic) Input argument parsing
+# -----------------------------------------------------------------------------
 # exit if no input is given
 if [ -z "$1" ]
 then
@@ -198,7 +214,10 @@ then
     exit
 fi
 
-# find a paper for given keyword
+# -----------------------------------------------------------------------------
+# qapers find
+# -----------------------------------------------------------------------------
+# find a paper that matches given list of keywords
 if [ "$1" = "find" ]
 then
     if [ -z "$2" ]
@@ -220,14 +239,20 @@ then
     fi
 fi
 
-# open specified PDF
+# -----------------------------------------------------------------------------
+# qapers open
+# -----------------------------------------------------------------------------
+# open specified paper for reading
 if [ "$1" = "open" ]
 then
     $PDF_READER $PDF_DIR/$2 &
     disown
 fi
 
-# open YAML file for annotations with given filename
+# -----------------------------------------------------------------------------
+# qapers note
+# -----------------------------------------------------------------------------
+# open YAML file for annotations for specified paper
 if [ "$1" = "note" ]
 then
     if [ -z "$2" ]
@@ -242,7 +267,10 @@ then
     fi
 fi
 
-# display specified YAML file contents to show annotations
+# -----------------------------------------------------------------------------
+# qapers review
+# -----------------------------------------------------------------------------
+# display bibliographic info and annotations for specified paper
 if [ "$1" = "review" ]
 then
     if [ -z "$2" ]
@@ -258,7 +286,10 @@ then
 fi
 
 
-# manage tags
+# -----------------------------------------------------------------------------
+# qapers tags
+# -----------------------------------------------------------------------------
+# display papers that match given list of tags or list all tags otherwise
 if [ "$1" = "tags" ]
 then
     if [ -z "$2" ]
@@ -281,7 +312,10 @@ then
     fi
 fi
 
-# indexing
+# -----------------------------------------------------------------------------
+# qapers index
+# -----------------------------------------------------------------------------
+# build index.qapers.yaml/json from scratch or update them to include new files
 if [ "$1" = "index" ]
 then
     if [ -z "$2" ]
