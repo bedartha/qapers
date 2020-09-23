@@ -7,7 +7,7 @@
 #           maintain a separate directory of annotations on each PDF file.
 #
 # Created: Sun Sep 20, 2020  08:26pm
-# Last modified: Wed Sep 23, 2020  09:56pm
+# Last modified: Wed Sep 23, 2020  10:04pm
 # Copyright: Bedartha Goswami <bedartha@zohomail.eu>
 # -------------------------------------------------------------------------
 
@@ -197,8 +197,8 @@ if [ "$1" = "note" ]
 then
     if [ -z "$2" ]
     then
-        echo -e "\033[1mSpecify file name or use 'review' to check the annotations in:\033[0m"
-        echo "Please specify a unique filename. See 'qapers find'."
+        echo "Please specify a unique filename."
+        echo "See 'qapers find' for more info."
     else
         LINE_NO=$(grep -n $2 $INDEX_YAML)
         LINE_NO=${LINE_NO%%:*}
@@ -212,7 +212,8 @@ if [ "$1" = "review" ]
 then
     if [ -z "$2" ]
     then
-        echo "Please specify a unique filename. See 'qapers find'."
+        echo "Please specify a unique filename."
+        echo "See 'qapers find' for more info."
     else
         JQ_CMD="jq -r '.Index[] .Paper |"
         JQ_CMD=$JQ_CMD" select( .PDF_file | contains(\"$2\") )"
@@ -228,7 +229,11 @@ then
     if [ -z "$2" ]
     then
         echo -e "\033[1mSpecify a tag from the list below \033[0m"
-        jq -r '.[] | .Tags' $INDEX_JSON | tr '\n' ',' | tr ',' '\n' | sed 's/^ //g' | sort | uniq -c
+        echo "(number indicates number of papers with the tag)"
+        JQ_CMD="jq -r '.Index[] .Paper.Tags'"
+        JQ_CMD="$JQ_CMD $INDEX_JSON | tr '\n' ',' | tr ',' '\n' | "
+        JQ_CMD="$JQ_CMD sed 's/^ //g' | sort | uniq -c"
+        eval $JQ_CMD
     else
         shift
         JQ_CMD="jq -r '.[] |"
