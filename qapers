@@ -7,7 +7,7 @@
 #           maintain a separate directory of annotations on each PDF file.
 #
 # Created: Sun Sep 20, 2020  08:26pm
-# Last modified: Wed Sep 23, 2020  10:13pm
+# Last modified: Wed Sep 23, 2020  10:49pm
 # Copyright: Bedartha Goswami <bedartha@gmail.com>
 # -------------------------------------------------------------------------
 
@@ -56,22 +56,57 @@ DESCRIPTION
 
     
 OPTIONS
-    find
-    open
-    note
-    review
-    tags
-    json
+    While the 'find' option is used to search a paper from teh library that
+    matches the keywords you provide, the idea is that you narriw down your
+    search to one file name, which is then piped to the other options 'open',
+    'note', and 'review'.
+
+    find [keyword] ...
+        search for papers that match given list of keywords
+
+    open [filename]
+        open specified PDF file using PDF_READER
+
+    note [filename]
+        open () index.qapers.yaml at the line number corresponding to the
+        entry for the paper with given file name
+
+    review [filename]
+        concatenate to stdout the bibliographic info including
+        annotations and tags (if any) of the paper with given file name
+    
+    tags [tag] ...
+        search for files that match given list of tags. If no tag is
+        provided then a list of currently used tags is printed, along
+        with the number of papers with each tag
+
+    index [command]
+        where [command] can be one of the following two options
+
+        build
+            build a new YAML (and JSON) index file from scratch. The new
+            index.qapers.yaml file will be populated with initial guesses of
+            publication year, journal name, first author, and publication title
+            from the PDF file name.
+            !!IMPORTANT!! Please back up your index.qapers.yaml before running
+            'qapers build' as all annotations will be lost!
+
+        update
+            update the existing YAML (and JSON) index file to append new files
+            which have been added to PDF_DIR since the last modification of
+            index.qapers.json
+        
 
 DEPENDENCY
-    yq          yq is a lightweight and portable command-line YAML processor
-                https://mikefarah.gitbook.io/yq/
-    jq          Command-line JSON processor
-                Installation on Ubuntu: sudo apt install jq
+    yq      yq is a lightweight and portable command-line YAML processor
+            https://mikefarah.gitbook.io/yq/
 
-    [Optional]
-    gvim        Vi IMproved - enhanced vi editor
-                Installation on Ubuntu: sudo apt install vim-gnome
+    jq      Command-line JSON processor
+            Installation on Ubuntu: sudo apt install jq
+
+    gvim    [Optional]
+            Vi IMproved - enhanced vi editor
+            Installation on Ubuntu: sudo apt install vim-gnome
 
 ENVIRONMENT VARIABLES
     PDF_DIR     Directory containing all PDF files to manage with qapers
@@ -82,7 +117,7 @@ ENVIRONMENT VARIABLES
 
 AUTHOR
     Bedartha Goswami
-    bedartha@zohomail.eu
+    bedartha@gmail.com
 
 COPYRIGHT
     Copyright (c) Bedartha Goswami 2020.
@@ -159,7 +194,7 @@ fi
 # help text
 if [ $1 = "help" ] || [ $1 = "--help" ] || [ $1 = "-h" ]
 then
-    echo "$USAGE" | less
+    echo "$USAGE"
     exit
 fi
 
@@ -251,7 +286,7 @@ if [ "$1" = "index" ]
 then
     if [ -z "$2" ]
     then
-        echo "Please specify keyword: build, update, ..."
+        echo "Please specify keyword: 'build' or 'update'."
         exit
     else
         if [ "$2" = "build" ]
