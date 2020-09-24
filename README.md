@@ -53,5 +53,6 @@ Examples and different use-cases coming soon
 
 TO DO
 -----
-[] Add more detailed features to README
-[] Add examples to README
+[ ] Add more detailed features to README
+[ ] Add examples to README
+[ ] Add version numbering
