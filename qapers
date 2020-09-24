@@ -7,7 +7,7 @@
 #           maintain a separate directory of annotations on each PDF file.
 #
 # Created: Sun Sep 20, 2020  08:26pm
-# Last modified: Wed Sep 23, 2020  11:12pm
+# Last modified: Thu Sep 24, 2020  12:02pm
 # Copyright: Bedartha Goswami <bedartha@gmail.com>
 # -----------------------------------------------------------------------------
 
@@ -175,6 +175,7 @@ add_to_yaml () {
         echo -en "            ""Key_Impact:\n" >> $INDEX_YAML
         echo -en "            ""Key_Points:\n" >> $INDEX_YAML
         echo -en "                ""- \n" >> $INDEX_YAML
+        echo -en "\n" >> $INDEX_YAML
 
     done
 
