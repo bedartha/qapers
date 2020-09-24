@@ -7,7 +7,7 @@
 #           maintain a separate directory of annotations on each PDF file.
 #
 # Created: Sun Sep 20, 2020  08:26pm
-# Last modified: Thu Sep 24, 2020  12:02pm
+# Last modified: Thu Sep 24, 2020  08:13pm
 # Copyright: Bedartha Goswami <bedartha@gmail.com>
 # -----------------------------------------------------------------------------
 
@@ -354,12 +354,7 @@ then
         if [ "$2" = "update" ]
         then
             echo Looking for new files in PDF directory ...
-            LS_OUT1=$(ls -lh --time-style=+%Y%m%d%H%M $INDEX_JSON)
-            LS_OUT2=${LS_OUT1%% $INDEX_JSON}
-            LS_OUT3=${LS_OUT2% *}
-            LAST_MOD=${LS_OUT2/$LS_OUT3}
-            echo $LAST_MOD
-            NEW_PDFS=$(find $PDF_DIR/*pdf -newerct "$LASTMOD")
+            NEW_PDFS=$(eval find "$PDF_DIR/*.pdf" -newer $INDEX_JSON)
             echo Found "$(echo $NEW_PDFS | wc -w)" new files
             add_to_yaml "$NEW_PDFS" 
             echo Updating JSON index from YAML ...
