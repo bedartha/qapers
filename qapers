@@ -7,7 +7,7 @@
 #           maintain a separate directory of annotations on each PDF file.
 #
 # Created: Sun Sep 20, 2020  08:26pm
-# Last modified: Thu Sep 24, 2020  08:13pm
+# Last modified: Thu Sep 24, 2020  08:17pm
 # Copyright: Bedartha Goswami <bedartha@gmail.com>
 # -----------------------------------------------------------------------------
 
@@ -236,7 +236,7 @@ then
             JQ_CMD=$JQ_CMD" select( .PDF_file | contains(\"$KEY\") ) |"
         done
         JQ_CMD=$JQ_CMD" .PDF_file ' $INDEX_JSON"
-        eval $JQ_CMD
+        eval $JQ_CMD | sort -r
     fi
 fi
 
