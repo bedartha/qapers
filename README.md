@@ -59,3 +59,4 @@ TO DO
 - [x] Add `nautilus-sendto` functionality
 - [ ] Add `set` functionality to set environment variables
 - [ ] Add bash completion
+- [ ] Add Bibtex export
