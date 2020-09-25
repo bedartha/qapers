@@ -58,3 +58,4 @@ TO DO
 - [ ] Add version numbering
 - [x] Add `nautilus-sendto` functionality
 - [ ] Add `set` functionality to set environment variables
+- [ ] Add bash completion
