@@ -7,7 +7,7 @@
 #           maintain a separate directory of annotations on each PDF file.
 #
 # Created: Sun Sep 20, 2020  08:26pm
-# Last modified: Thu Sep 24, 2020  08:17pm
+# Last modified: Fri Sep 25, 2020  05:22pm
 # Copyright: Bedartha Goswami <bedartha@gmail.com>
 # -----------------------------------------------------------------------------
 
@@ -95,6 +95,10 @@ OPTIONS
             update the existing YAML (and JSON) index file to append new files
             which have been added to PDF_DIR since the last modification of
             index.qapers.json
+
+    mail [filename]
+        open default email client compose window with specified PDF file as an
+        attachment. Requires `nautilus-sendto`.
         
 
 DEPENDENCY
@@ -199,7 +203,7 @@ if [ $1 != "help" ] && [ $1 != "find" ] && [ $1 != "open" ]
 then
     if [ $1 != "note" ] && [ $1 != "review" ] && [ $1 != "tags" ]
     then
-        if [ $1 != "index" ]
+        if [ $1 != "index" ] && [ $1 != "mail" ]
         then
             echo "Please specify correct input."
             echo "See 'qapers help' for more info."
@@ -361,6 +365,23 @@ then
             yq r $INDEX_YAML -j > $INDEX_JSON
             echo Done.
         fi
+    fi
+fi
+
+
+# -----------------------------------------------------------------------------
+# qapers mail
+# -----------------------------------------------------------------------------
+# send specified file as attachment using default email client
+
+if [ "$1" = "mail" ]
+then
+    if [ -z "$2" ] || ! [ -z "$3" ]
+    then
+        echo "Please specify a unique filename."
+        echo "See 'qapers find' for more info."
+    else
+        eval nautilus-sendto "$PDF_DIR/$2"
     fi
 fi
 

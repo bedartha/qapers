@@ -56,5 +56,5 @@ TO DO
 - [ ] Add more detailed features to README
 - [ ] Add examples to README
 - [ ] Add version numbering
-- [ ] Add `nautilus-sendto` functionality
+- [x] Add `nautilus-sendto` functionality
 - [ ] Add `set` functionality to set environment variables
