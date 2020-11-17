@@ -7,7 +7,7 @@
 #           maintain a separate directory of annotations on each PDF file.
 #
 # Created: Sun Sep 20, 2020  08:26pm
-# Last modified: Wed Nov 04, 2020  10:31am
+# Last modified: Tue Nov 17, 2020  12:45pm
 #
 # Copyright (C) 2020  Bedartha Goswami <bedartha@gmail.com>
 # This program is free software: you can redistribute it and/or modify
@@ -79,6 +79,9 @@ OPTIONS
 
     open [filename]
         open specified PDF file using PDF_READER
+
+    reveal [filename]
+        reveal specified PDF file in Nautilus file browser
 
     note [filename]
         open () index.qapers.yaml at the line number corresponding to the
@@ -212,7 +215,7 @@ then
 fi
 
 # exit with error message if inputs are incorrect
-if [ $1 != "help" ] && [ $1 != "find" ] && [ $1 != "open" ]
+if [ $1 != "help" ] && [ $1 != "find" ] && [ $1 != "open" ] && [ $1 != "reveal" ]
 then
     if [ $1 != "note" ] && [ $1 != "review" ] && [ $1 != "tags" ]
     then
@@ -264,6 +267,16 @@ fi
 if [ "$1" = "open" ]
 then
     $PDF_READER $PDF_DIR/$2 &
+    disown
+fi
+
+# -----------------------------------------------------------------------------
+# qapers reveal
+# -----------------------------------------------------------------------------
+# reveals the specified paper in Nautilus file browser
+if [ "$1" = "reveal" ]
+then
+    nautilus -s $PDF_DIR/$2 &
     disown
 fi
 
